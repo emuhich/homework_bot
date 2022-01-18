@@ -34,6 +34,7 @@ HOMEWORK_STATUSES = {
 
 
 def send_message(bot, message):
+    """Отправка сообщения."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except Exception:
@@ -41,6 +42,7 @@ def send_message(bot, message):
 
 
 def get_api_answer(current_timestamp):
+    """Api запрос к практикуму."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
@@ -48,11 +50,13 @@ def get_api_answer(current_timestamp):
     except Exception:
         raise Exception('любые другие сбои при запросе к эндпоинту')
     if homework.status_code != 200:
-        raise Exception('недоступность эндпоинта https://practicum.yandex.ru/api/user_api/homework_statuses/')
+        raise Exception('недоступность эндпоинта '
+                        'https://practicum.yandex.ru/api/user_api/homework_statuses/')
     return homework.json()
 
 
 def check_response(response):
+    """Проверка вернувшегося ответа от практикума."""
     if type(response) == list:
         response = response[0]
 
@@ -67,12 +71,15 @@ def check_response(response):
 
 
 def parse_status(homework):
+    """Достаем из домашки нужную информацию."""
     if 'status' not in homework:
         raise KeyError('Пустое значение status')
     elif 'homework_name' not in homework:
         raise KeyError('Пустое значение homework_name')
     elif homework['status'] not in HOMEWORK_STATUSES:
-        raise Exception('недокументированный статус домашней работы, обнаруженный в ответе API')
+        raise Exception('недокументированный статус домашней работы, '
+                        'обнаруженный в ответе API'
+                        )
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     verdict = HOMEWORK_STATUSES[homework_status]
@@ -80,15 +87,21 @@ def parse_status(homework):
 
 
 def check_tokens():
+    """Проверка токенов."""
     if not PRACTICUM_TOKEN:
-        logging.critical(f'Отсутствует обязательная переменная окружения: PRACTICUM_TOKEN\n'
+        logging.critical(f'Отсутствует обязательная переменная окружения: '
+                         f'PRACTICUM_TOKEN\n'
                          f'Программа принудительно остановлена.')
         return False
     elif not TELEGRAM_TOKEN:
-        logging.critical(f'Отсутствует обязательная переменная окружения: TELEGRAM_TOKEN\n')
+        logging.critical(f'Отсутствует обязательная переменная окружения: '
+                         f'TELEGRAM_TOKEN\n'
+                         f'Программа принудительно остановлена.')
         return False
     elif not TELEGRAM_CHAT_ID:
-        logging.critical(f'Отсутствует обязательная переменная окружения: TELEGRAM_CHAT_ID\n')
+        logging.critical(f'Отсутствует обязательная переменная окружения: '
+                         f'TELEGRAM_CHAT_ID\n'
+                         f'Программа принудительно остановлена.')
         return False
 
     return True
