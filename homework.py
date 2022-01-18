@@ -50,9 +50,10 @@ def get_api_answer(current_timestamp):
     except Exception:
         raise Exception('любые другие сбои при запросе к эндпоинту')
     if homework.status_code != 200:
-        raise Exception('недоступность эндпоинта '
-                        'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-                        )
+        raise Exception(
+            'недоступность эндпоинта '
+            'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+        )
     return homework.json()
 
 
