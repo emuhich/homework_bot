@@ -23,7 +23,7 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 RETRY_TIME = 600
-ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+PRACTICUM_ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 HOMEWORK_STATUSES = {
@@ -38,7 +38,7 @@ def send_message(bot, message):
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except Exception:
-        raise Exception('Сбой при отправке сообщения в Telegram:')
+        logging.error('Сбой при отправке сообщения в Telegram:')
 
 
 def get_api_answer(current_timestamp):
@@ -46,63 +46,52 @@ def get_api_answer(current_timestamp):
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
-        homework = requests.get(ENDPOINT, headers=HEADERS, params=params)
+        homework = requests.get(PRACTICUM_ENDPOINT, headers=HEADERS, params=params)
     except Exception:
         raise Exception('любые другие сбои при запросе к эндпоинту')
     if homework.status_code != 200:
-        raise Exception(
-            'недоступность эндпоинта '
-            'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-        )
-    return homework.json()
+        raise Exception(f'недоступность эндпоинта {PRACTICUM_ENDPOINT}')
+    if homework.json():
+        return homework.json()
 
 
 def check_response(response):
     """Проверка вернувшегося ответа от практикума."""
-    if type(response) == list:
+    if isinstance(response, list):
         response = response[0]
+    if len(response) == 0:
+        raise Exception('Ответ пришел пустой')
 
-    homework = response.get('homeworks')
-
-    if len(homework) == 0:
-        raise Exception('Список с домашкой пуст')
-    if type(homework) != list:
+    homeworks = response.get('homeworks')
+    if not isinstance(homeworks, list):
         raise Exception("homework не является словарем")
+    if len(homeworks) == 0:
+        raise Exception('Список с домашкой пуст')
 
-    return homework[0]
+    return homeworks[0]
 
 
 def parse_status(homework):
     """Достаем из домашки нужную информацию."""
     if 'status' not in homework:
         raise KeyError('Пустое значение status')
-    elif 'homework_name' not in homework:
+    if 'homework_name' not in homework:
         raise KeyError('Пустое значение homework_name')
-    elif homework['status'] not in HOMEWORK_STATUSES:
+    if homework['status'] not in HOMEWORK_STATUSES:
         raise Exception('недокументированный статус домашней работы, '
                         'обнаруженный в ответе API'
                         )
-    homework_name = homework.get('homework_name')
-    homework_status = homework.get('status')
+    homework_name = homework['homework_name']
+    homework_status = homework['status']
     verdict = HOMEWORK_STATUSES[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def check_tokens():
     """Проверка токенов."""
-    if not PRACTICUM_TOKEN:
+    if not all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]):
         logging.critical('Отсутствует обязательная переменная окружения: '
                          'PRACTICUM_TOKEN\n'
-                         'Программа принудительно остановлена.')
-        return False
-    elif not TELEGRAM_TOKEN:
-        logging.critical('Отсутствует обязательная переменная окружения: '
-                         'TELEGRAM_TOKEN\n'
-                         'Программа принудительно остановлена.')
-        return False
-    elif not TELEGRAM_CHAT_ID:
-        logging.critical('Отсутствует обязательная переменная окружения: '
-                         'TELEGRAM_CHAT_ID\n'
                          'Программа принудительно остановлена.')
         return False
 
@@ -112,13 +101,12 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-
+    if not check_tokens():
+        return
     status = ''
     while True:
         try:
             current_timestamp = int(time.time())
-            if not check_tokens():
-                break
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
             message = parse_status(homework)
