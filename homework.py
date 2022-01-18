@@ -23,7 +23,8 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 RETRY_TIME = 600
-PRACTICUM_ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+PRACTICUM_ENDPOINT = 'https://practicum.yandex.ru/api/user_api/' \
+                     'homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 HOMEWORK_STATUSES = {
@@ -46,7 +47,11 @@ def get_api_answer(current_timestamp):
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
-        homework = requests.get(PRACTICUM_ENDPOINT, headers=HEADERS, params=params)
+        homework = requests.get(
+            PRACTICUM_ENDPOINT,
+            headers=HEADERS,
+            params=params
+        )
     except Exception:
         raise Exception('любые другие сбои при запросе к эндпоинту')
     if homework.status_code != 200:
