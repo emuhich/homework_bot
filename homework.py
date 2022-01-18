@@ -51,7 +51,8 @@ def get_api_answer(current_timestamp):
         raise Exception('любые другие сбои при запросе к эндпоинту')
     if homework.status_code != 200:
         raise Exception('недоступность эндпоинта '
-                        'https://practicum.yandex.ru/api/user_api/homework_statuses/')
+                        'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+                        )
     return homework.json()
 
 
@@ -89,19 +90,19 @@ def parse_status(homework):
 def check_tokens():
     """Проверка токенов."""
     if not PRACTICUM_TOKEN:
-        logging.critical(f'Отсутствует обязательная переменная окружения: '
-                         f'PRACTICUM_TOKEN\n'
-                         f'Программа принудительно остановлена.')
+        logging.critical('Отсутствует обязательная переменная окружения: '
+                         'PRACTICUM_TOKEN\n'
+                         'Программа принудительно остановлена.')
         return False
     elif not TELEGRAM_TOKEN:
-        logging.critical(f'Отсутствует обязательная переменная окружения: '
-                         f'TELEGRAM_TOKEN\n'
-                         f'Программа принудительно остановлена.')
+        logging.critical('Отсутствует обязательная переменная окружения: '
+                         'TELEGRAM_TOKEN\n'
+                         'Программа принудительно остановлена.')
         return False
     elif not TELEGRAM_CHAT_ID:
-        logging.critical(f'Отсутствует обязательная переменная окружения: '
-                         f'TELEGRAM_CHAT_ID\n'
-                         f'Программа принудительно остановлена.')
+        logging.critical('Отсутствует обязательная переменная окружения: '
+                         'TELEGRAM_CHAT_ID\n'
+                         'Программа принудительно остановлена.')
         return False
 
     return True
@@ -109,7 +110,6 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
-
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
 
     status = ''
