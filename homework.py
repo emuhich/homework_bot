@@ -23,9 +23,11 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 RETRY_TIME = 600
-PRACTICUM_ENDPOINT = 'https://practicum.yandex.ru/api/user_api/' \
-                     'homework_statuses/'
-HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
+PRACTICUM_ENDPOINT = (
+    'https://practicum.yandex.ru/api/user_api/'
+    'homework_statuses/'
+)
+PRACTICUM_HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 HOMEWORK_STATUSES = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
@@ -49,23 +51,26 @@ def get_api_answer(current_timestamp):
     try:
         homework = requests.get(
             PRACTICUM_ENDPOINT,
-            headers=HEADERS,
+            headers=PRACTICUM_HEADERS,
             params=params
         )
     except Exception:
         raise Exception('любые другие сбои при запросе к эндпоинту')
     if homework.status_code != 200:
         raise Exception(f'недоступность эндпоинта {PRACTICUM_ENDPOINT}')
-    if homework.json():
+    try:
         return homework.json()
+    except Exception:
+        raise Exception('ошибка, тело не в json формате')
 
 
 def check_response(response):
     """Проверка вернувшегося ответа от практикума."""
-    if isinstance(response, list):
-        response = response[0]
+
     if len(response) == 0:
         raise Exception('Ответ пришел пустой')
+    if isinstance(response, list):
+        response = response[0]
 
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
@@ -119,16 +124,16 @@ def main():
                 logging.info('Сообщение о новом статусе проверки отправлено')
                 send_message(bot, message)
             logging.debug('отсутствие в ответе новых статусов')
-            time.sleep(RETRY_TIME)
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             send_message(bot, message)
             logging.info('Сообщение о ошибке отправлено')
             logging.exception('Ошибка:')
-            time.sleep(RETRY_TIME)
         else:
             status = message
+        finally:
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
