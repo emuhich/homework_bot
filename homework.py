@@ -66,7 +66,6 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Проверка вернувшегося ответа от практикума."""
-
     if len(response) == 0:
         raise Exception('Ответ пришел пустой')
     if isinstance(response, list):
